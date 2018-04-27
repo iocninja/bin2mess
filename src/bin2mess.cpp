@@ -7,20 +7,22 @@
 
 int wmain(int argc, wchar_t* argv[])
 {
-	if (argc != 5)
+	if (argc != 6)
 	{
-		wprintf(L"Arguments: [--aes][--xor] <full\\path\\to\\input.file> <full\\path\\to\\mess.file> <full\\path\\to\\key.file>\n");
+		wprintf(L"Arguments: [--aes][--xor] [--entropy-default][--entropy-reduce][--entropy-reduce-more] <full\\path\\to\\input.file> <full\\path\\to\\mess.file> <full\\path\\to\\key.file>\n");
 
 		return 0;
 	}
 
 	const wchar_t* mode = argv[1];
 
-	const wchar_t* fileNameIn = argv[2];
-	
-	const wchar_t* fileNameOut = argv[3];
+	const wchar_t* entropy = argv[2];
 
-	const wchar_t* fileNameKey = argv[4];
+	const wchar_t* fileNameIn = argv[3];
+	
+	const wchar_t* fileNameOut = argv[4];
+
+	const wchar_t* fileNameKey = argv[5];
 
 	FILE* fileIn = _wfopen(fileNameIn, L"rb");
 	
@@ -50,7 +52,7 @@ int wmain(int argc, wchar_t* argv[])
 						{
 							srand(GetTickCount());
 
-							if (wcscmp(mode, L"--aes") == 0)
+							if (_wcsicmp(mode, L"--aes") == 0)
 							{
 								uint8_t key[32];
 
@@ -65,14 +67,25 @@ int wmain(int argc, wchar_t* argv[])
 
 								uint32_t obfuscatedSize = 0;
 
-								if (X_LIB_MALICIOUS_CALL(xObfuscationObfuscateAes)(key, sizeof(key), plain, plainSize, &obfuscated, &obfuscatedSize))
+								xObfuscationEntropy e = xObfuscationEntropyDefault;
+
+								if (_wcsicmp(entropy, L"--entropy-reduce") == 0)
+								{
+									e = xObfuscationEntropyReduce;
+								}
+								else if (_wcsicmp(entropy, L"--entropy-reduce-more") == 0)
+								{
+									e = xObfuscationEntropyReduceMore;
+								}
+
+								if (X_LIB_MALICIOUS_CALL(xObfuscationObfuscateAes)(key, sizeof(key), plain, plainSize, &obfuscated, &obfuscatedSize, e))
 								{
 									fwrite(obfuscated, 1, obfuscatedSize, fileOut);
 
 									X_LIB_MALICIOUS_CALL(xMemoryFree)(obfuscated);
 								}
 							}
-							else if (wcscmp(mode, L"--xor") == 0)
+							else if (_wcsicmp(mode, L"--xor") == 0)
 							{
 								uint8_t key;
 
