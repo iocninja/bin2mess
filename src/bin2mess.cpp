@@ -9,10 +9,12 @@ int wmain(int argc, wchar_t* argv[])
 {
 	if (argc != 6)
 	{
-		wprintf(L"Arguments: [--aes][--xor] [--entropy-default][--entropy-reduce][--entropy-reduce-more] <full\\path\\to\\input.file> <full\\path\\to\\mess.file> <full\\path\\to\\key.file>\n");
+		wprintf(L"Arguments: [--aes][--xor] [--entropy-default][--entropy-reduce][--entropy-reduce-more] <full\\path\\to\\input.file> <full\\path\\to\\key.file> <full\\path\\to\\mess.file>\n");
 
-		return 0;
+		return ERROR_INVALID_PARAMETER;
 	}
+
+	int result = ERROR_GEN_FAILURE;
 
 	const wchar_t* mode = argv[1];
 
@@ -20,21 +22,21 @@ int wmain(int argc, wchar_t* argv[])
 
 	const wchar_t* fileNameIn = argv[3];
 	
-	const wchar_t* fileNameOut = argv[4];
+	const wchar_t* fileNameKey = argv[4];
 
-	const wchar_t* fileNameKey = argv[5];
+	const wchar_t* fileNameOut = argv[5];
 
 	FILE* fileIn = _wfopen(fileNameIn, L"rb");
 	
 	if (fileIn)
 	{
-		FILE* fileOut = _wfopen(fileNameOut, L"wb");
+		FILE* fileKey = _wfopen(fileNameKey, L"wb");
 
-		if (fileOut)
+		if (fileKey)
 		{
-			FILE* fileKey = _wfopen(fileNameKey, L"wb");
+			FILE* fileOut = _wfopen(fileNameOut, L"wb");
 
-			if (fileKey)
+			if (fileOut)
 			{
 				fseek(fileIn, 0, SEEK_END);
 
@@ -65,7 +67,7 @@ int wmain(int argc, wchar_t* argv[])
 
 								uint8_t* obfuscated = NULL;
 
-								uint32_t obfuscatedSize = 0;
+								size_t obfuscatedSize = 0;
 
 								xObfuscationEntropy e = xObfuscationEntropyDefault;
 
@@ -83,6 +85,8 @@ int wmain(int argc, wchar_t* argv[])
 									fwrite(obfuscated, 1, obfuscatedSize, fileOut);
 
 									X_LIB_MALICIOUS_CALL(xMemoryFree)(obfuscated);
+
+									result = ERROR_SUCCESS;
 								}
 							}
 							else if (_wcsicmp(mode, L"--xor") == 0)
@@ -100,6 +104,8 @@ int wmain(int argc, wchar_t* argv[])
 									fwrite(obfuscated, 1, plainSize, fileOut);
 
 									X_LIB_MALICIOUS_CALL(xMemoryFree)(obfuscated);
+
+									result = ERROR_SUCCESS;
 								}
 							}
 						}
@@ -116,14 +122,14 @@ int wmain(int argc, wchar_t* argv[])
 					wprintf(L"Size of input.file = 0\n");
 				}
 
-				fclose(fileKey);
+				fclose(fileOut);
 			}
 			else
 			{
 				wprintf(L"Could not open key.file\n");
 			}
 
-			fclose(fileOut);
+			fclose(fileKey);
 		}
 		else
 		{
@@ -137,5 +143,5 @@ int wmain(int argc, wchar_t* argv[])
 		wprintf(L"Could not open input.file\n");
 	}
 	
-	return 0;
+	return result;
 }
